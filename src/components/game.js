@@ -31,7 +31,25 @@ class Game extends React.Component {
     .slice(0, this.props.randomNumberCount - 2)
     .reduce((acc, curr) => acc + curr, 0);
 
+  // gameStatus: PLAYING, WON, LOST
+  gameStatus = () => {
+    const sumSelected = this.state.selectedIds.reduce(
+      (acc, curr) => acc + this.randomNumbers[curr],
+      0,
+    );
+    if (sumSelected < this.target) {
+      return 'PLAYING';
+    }
+    if (sumSelected === this.target) {
+      return 'WON';
+    }
+    if (sumSelected > this.target) {
+      return 'LOST';
+    }
+  };
+
   render() {
+    const gameStatus = this.gameStatus();
     return (
       <SafeAreaView style>
         <View style={styles.container}>
@@ -47,6 +65,7 @@ class Game extends React.Component {
               />
             ))}
           </View>
+          <Text>{gameStatus}</Text>
         </View>
       </SafeAreaView>
     );
