@@ -3,17 +3,19 @@ import PropTypes from 'prop-types';
 
 import RandomNumber from './RandomNumber';
 
-import {View, Text, SafeAreaView, StyleSheet} from 'react-native';
+import {View, Text, SafeAreaView, StyleSheet, Button} from 'react-native';
 
 class Game extends React.Component {
   static propTypes = {
     randomNumberCount: PropTypes.number.isRequired,
     initialSeconds: PropTypes.number.isRequired,
+    onPlayAgain: PropTypes.func.isRequired,
   };
 
   state = {
     selectedIds: [],
     remainingSeconds: this.props.initialSeconds,
+    gameStatus: 'PLAYING',
   };
 
   componentDidMount() {
@@ -35,6 +37,19 @@ class Game extends React.Component {
     clearInterval(this.intervalId);
   }
 
+  // if a component will be updated this method should be called and it should change the gameStatus
+  componentDidUpdate(prevProps, prevState) {
+    if (
+      prevState.selectedIds !== this.state.selectedIds ||
+      prevState.remainingSeconds !== this.state.remainingSeconds
+    ) {
+      this.setState({gameStatus: this.calcGameStatus()});
+      if (this.state.gameStatus !== 'PLAYING') {
+        clearInterval(this.intervalId);
+      }
+    }
+  }
+
   isNumberSelected = numberIndex => {
     return this.state.selectedIds.indexOf(numberIndex) >= 0;
   };
@@ -52,8 +67,14 @@ class Game extends React.Component {
     .slice(0, this.props.randomNumberCount - 2)
     .reduce((acc, curr) => acc + curr, 0);
 
+  // shuffle the randomNumbers array
+  shuffledRandomNumbers = this.randomNumbers
+    .map(a => ({sort: Math.random(), value: a}))
+    .sort((a, b) => a.sort - b.sort)
+    .map(a => a.value);
+
   // gameStatus: PLAYING, WON, LOST
-  gameStatus = () => {
+  calcGameStatus = () => {
     const sumSelected = this.state.selectedIds.reduce(
       (acc, curr) => acc + this.randomNumbers[curr],
       0,
@@ -73,7 +94,7 @@ class Game extends React.Component {
   };
 
   render() {
-    const gameStatus = this.gameStatus();
+    const gameStatus = this.state.gameStatus;
     return (
       <SafeAreaView style>
         <View style={styles.container}>
@@ -93,8 +114,14 @@ class Game extends React.Component {
               />
             ))}
           </View>
-          <Text>{gameStatus}</Text>
           <Text>{this.state.remainingSeconds}</Text>
+          {this.state.gameStatus !== 'PLAYING' && (
+            <Button
+              title="Play Again"
+              onPress={this.props.onPlayAgain}
+              style={styles.button}
+            />
+          )}
         </View>
       </SafeAreaView>
     );
@@ -121,6 +148,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '80%',
     marginTop: 50,
+  },
+  // a button to play again when the game is over (won or lost) and the gameStatus is not PLAYING and button should be in the bottom
+  button: {
+    position: 'absolute',
+    bottom: 10,
+    borderWidth: 1,
+    borderColor: 'black',
+    borderRadius: 5,
+    padding: 10,
+    margin: 10,
+    width: '80%',
+    backgroundColor: 'lightblue',
   },
   STATUS_PLAYING: {
     backgroundColor: '#aaa',
